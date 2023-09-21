@@ -39,8 +39,6 @@ class RecordVoiceMessageAction : AnAction() {
             init()
         }
 
-        override fun isOKActionEnabled(): Boolean = !isRecording
-
         override fun doOKAction() {
             val name = java.time.Instant.now().toEpochMilli()
             val path = ".idea/${name}.wav"
@@ -81,6 +79,7 @@ class RecordVoiceMessageAction : AnAction() {
                     override fun actionPerformed(e: ActionEvent?) {
                         if (!isRecording) {
                             isRecording = true
+                            isOKActionEnabled = false
                             putValue(Action.NAME, "Stop recording")
 
                             microphone.open()
@@ -88,6 +87,7 @@ class RecordVoiceMessageAction : AnAction() {
 
                             thread { AudioSystem.write(out, AudioFileFormat.Type.WAVE, File(tempPath.toUri())) }
                         } else {
+                            isOKActionEnabled = true
                             isRecording = false
                             putValue(Action.NAME, "Start recording")
 
