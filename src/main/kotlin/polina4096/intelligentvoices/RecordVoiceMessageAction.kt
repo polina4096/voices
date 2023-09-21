@@ -1,4 +1,4 @@
-package polina4096.voices
+package polina4096.intelligentvoices
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -18,7 +18,6 @@ import javax.sound.sampled.*
 import javax.swing.*
 import kotlin.concurrent.thread
 
-
 class RecordVoiceMessageAction : AnAction() {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
@@ -35,7 +34,7 @@ class RecordVoiceMessageAction : AnAction() {
         val out = AudioInputStream(microphone)
 
         init {
-            title = "Record a voice message"
+            title = "Record a Voice Message"
             init()
         }
 
@@ -45,9 +44,13 @@ class RecordVoiceMessageAction : AnAction() {
             val name = java.time.Instant.now().toEpochMilli()
             val path = ".idea/${name}.wav"
             val dest = File(basePath.resolve(path).toUri())
-            File(tempPath.toUri()).renameTo(dest)
+            if (!File(tempPath.toUri()).renameTo(dest)) {
+                e.project!!.error("Failed to record voice message!")
+                return
+            }
 
             val editor = FileEditorManager.getInstance(e.project!!).selectedTextEditor ?: run { close(OK_EXIT_CODE); return }
+
             val startOffset = editor.caretModel.offset
             val line = StringUtil.offsetToLineNumber(editor.document.text, startOffset)
 
@@ -56,7 +59,7 @@ class RecordVoiceMessageAction : AnAction() {
                 val key = TextAttributesKey.createTextAttributesKey("voice_message")
                 val highlighter = editor.markupModel.addLineHighlighter(key, line, HighlighterLayer.FIRST)
 
-                makeVoiceFold(editor, highlighter, makeVoiceFoldRegionRenderer(editor, dest, startOffset))
+                makeVoiceFold(editor, highlighter, VoiceFoldRegionRenderer(editor, dest, startOffset))
             }
 
             close(OK_EXIT_CODE)
@@ -85,7 +88,6 @@ class RecordVoiceMessageAction : AnAction() {
 
                             microphone.open()
                             microphone.start()
-
                             thread { AudioSystem.write(out, AudioFileFormat.Type.WAVE, File(tempPath.toUri())) }
                         } else {
                             isRecording = false

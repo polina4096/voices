@@ -1,4 +1,4 @@
-package polina4096.voices
+package polina4096.intelligentvoices
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.UISettings
@@ -26,29 +26,21 @@ import com.intellij.psi.PsiTreeChangeEvent
 import com.intellij.psi.PsiTreeChangeListener
 import com.intellij.refactoring.suggested.startOffset
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.file.Files
-import java.nio.file.attribute.FileTime
-import java.time.ZoneId
-import javax.sound.sampled.AudioSystem
 import javax.swing.Icon
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.roundToInt
 
-fun Project.log(string: String) {
+fun Project.error(string: String) {
     NotificationGroupManager.getInstance()
-        .getNotificationGroup("Debug Notification")
-        .createNotification(string, NotificationType.INFORMATION)
+        .getNotificationGroup("Intelligent Voices")
+        .createNotification(string, NotificationType.ERROR)
         .notify(this)
 }
 
-fun makeVoiceFold(editor: Editor, highlighter: RangeHighlighter, voiceFoldRegion: VoiceFoldRegionRenderer) {
+fun makeVoiceFold(editor: Editor, highlighter: RangeHighlighter, makeVoiceFoldRegion: VoiceFoldRegionRenderer) {
     editor.foldingModel.runBatchFoldingOperation {
         val position = StringUtil.offsetToLineNumber(highlighter.document.text, highlighter.startOffset)
         val offset = highlighter.getUserData<Int>(Key("offset"))
-        editor.foldingModel.addCustomLinesFolding(position, position, voiceFoldRegion.also { if (offset != null) it.offset = offset })
+        editor.foldingModel.addCustomLinesFolding(position, position, makeVoiceFoldRegion.also { if (offset != null) it.offset = offset })
     }
 }
 
@@ -75,69 +67,6 @@ fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegi
     highlighter.gutterIconRenderer = VoiceGutterIconRenderer(highlighter)
 }
 
-fun makeVoiceFoldRegionRenderer(editor: Editor, file: File, startOffset: Int): VoiceFoldRegionRenderer {
-    // load audio
-    val stream = AudioSystem.getAudioInputStream(file)
-
-    // extract frequencies
-    val frameCount = stream.frameLength.toInt()
-    val dataLength = frameCount * stream.format.sampleSizeInBits * stream.format.channels / 8
-    val data = ByteArray(dataLength)
-    stream.read(data)
-
-    val sampleSize = stream.format.sampleSizeInBits / 8
-    val channelsNum = stream.format.channels
-    val samples = mutableListOf<Double>()
-    for (idx in 0 until frameCount) {
-        val sampleBytes = ByteArray(4) //4byte = int
-        for (i in 0 until sampleSize) {
-            sampleBytes[i] = data[idx * sampleSize * channelsNum + i]
-        }
-
-        samples.add(ByteBuffer
-            .wrap(sampleBytes)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .getInt()
-            .toDouble())
-    }
-
-    // downsample
-    val resolution = 40
-    val sampleChunkLength = samples.size / resolution
-
-    // find absolute average of each chunk
-    val chunks = samples
-        .chunked(sampleChunkLength)
-        .map { it.fold(0.0) { acc, e -> acc + abs(e) } }
-        .map { it / sampleChunkLength }
-
-    // normalize and scale
-    val normal = chunks.maxOf { it }
-    val min = chunks.average() / 1.25
-
-    val waveform = chunks.map { max((it - min) / (normal - min), 0.0) }
-
-    val indentation = editor.offsetToVisualPosition(startOffset).column
-    // indents.getDescriptor(start, start)?.indentLevel ?: 0
-
-    val absolutePath = file.toPath()
-    val duration = frameCount / stream.format.frameRate
-    val creation = with(
-        (Files.getAttribute(absolutePath, "creationTime") as FileTime)
-            .toInstant()
-            .atZone(ZoneId.systemDefault())
-            .toLocalTime()) { "%02d:%02d".format(hour, minute) }
-
-    return VoiceFoldRegionRenderer(
-        editor,
-        indentation,
-        waveform,
-        duration,
-        creation,
-        absolutePath,
-    )
-}
-
 fun processPsiEvent(event: PsiTreeChangeEvent) {
     if (event.child is PsiComment) {
         val project = event.child.project
@@ -161,8 +90,7 @@ fun processPsiEvent(event: PsiTreeChangeEvent) {
             return
         }
 
-        makeVoiceComment(line, { makeVoiceFoldRegionRenderer(editor, file, startOffset) }, editor)
-
+        makeVoiceComment(line, { VoiceFoldRegionRenderer(editor, file, startOffset) }, editor)
     }
 }
 
@@ -175,7 +103,7 @@ class MyProjectManagerListener : ProjectManagerListener {
                     override fun mouseClicked(event: EditorMouseEvent) {
                         if (event.area != EditorMouseEventArea.EDITING_AREA) return
                         val region = editor.foldingModel.allFoldRegions
-                            .first { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == event.logicalPosition.line } ?: return
+                            .firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == event.logicalPosition.line } ?: return
 
                         val mouseEvent = event.mouseEvent
                         val regionPos = editor.offsetToXY(region.startOffset)

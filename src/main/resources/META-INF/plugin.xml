@@ -1,38 +1,21 @@
-<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>polina4096.voices.voices</id>
-
-    <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>Voices</name>
-
-    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="polina@yandex.ru" url="https://t.me/polina4096">Полина</vendor>
-
-    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
-    <description><![CDATA[
-    Adds support for voice messages to IntelliJ-based IDEs
-  ]]></description>
-
-    <!-- Product and plugin compatibility requirements.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <id>polina4096.intelligentvoices</id>
+    <name>Intelligent Voices</name>
+    <vendor email="polina4096@yandex.ru" url="https://t.me/polina4096">Полина</vendor>
+    <description><![CDATA[Adds support for voice messages to IntelliJ-based IDEs]]></description>
     <depends>com.intellij.modules.platform</depends>
-
-    <!-- Extension points defined by the plugin.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <notificationGroup id="Debug Notification"
+        <notificationGroup id="Intelligent Voices"
                            displayType="BALLOON" />
     </extensions>
     <applicationListeners>
-        <listener class="polina4096.voices.MyProjectManagerListener"
+        <listener class="polina4096.intelligentvoices.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
     <actions>
-        <action id="polina4096.voices.RecordVoiceMessageAction" class="polina4096.voices.RecordVoiceMessageAction"
-                text="Record Voice Message" description="Record a voice message and put in into a comment"/>
+        <action id="polina4096.intelligentvoices.RecordVoiceMessageAction" class="polina4096.intelligentvoices.RecordVoiceMessageAction"
+                text="Record Voice Message" description="Record a voice message and put in into a comment">
+            <add-to-group group-id="EditMenu" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>
