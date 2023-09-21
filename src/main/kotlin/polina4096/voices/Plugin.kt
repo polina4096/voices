@@ -52,7 +52,7 @@ fun makeVoiceFold(editor: Editor, highlighter: RangeHighlighter, voiceFoldRegion
     }
 }
 
-fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegionRenderer, editor: Editor) {
+fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegionRenderer?, editor: Editor) {
     class VoiceGutterIconRenderer(val highlighter: RangeHighlighter) : GutterIconRenderer() {
         override fun getIcon(): Icon = AllIcons.Gutter.JavadocRead
         override fun hashCode(): Int = this.clickAction.hashCode()
@@ -61,7 +61,10 @@ fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegi
         override fun getClickAction(): AnAction {
             return object : AnAction() {
                 override fun actionPerformed(e: AnActionEvent) {
-                    makeVoiceFold(editor, highlighter, voiceFoldRegionRenderer())
+                    val render = voiceFoldRegionRenderer()
+                    if (render != null) {
+                        makeVoiceFold(editor, highlighter, render)
+                    }
                 }
             }
         }
@@ -75,7 +78,7 @@ fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegi
     highlighter.gutterIconRenderer = VoiceGutterIconRenderer(highlighter)
 }
 
-fun makeVoiceFoldRegionRenderer(editor: Editor, file: File, startOffset: Int): VoiceFoldRegionRenderer {
+fun makeVoiceFoldRegionRenderer(editor: Editor, file: File, startOffset: Int): VoiceFoldRegionRenderer? {
     // load audio
     val stream = AudioSystem.getAudioInputStream(file)
 
@@ -110,6 +113,10 @@ fun makeVoiceFoldRegionRenderer(editor: Editor, file: File, startOffset: Int): V
         .chunked(sampleChunkLength)
         .map { it.fold(0.0) { acc, e -> acc + abs(e) } }
         .map { it / sampleChunkLength }
+
+    if (chunks.all { it == 0.0 }) {
+        return null
+    }
 
     // normalize and scale
     val normal = chunks.maxOf { it }
@@ -155,8 +162,9 @@ fun processPsiEvent(event: PsiTreeChangeEvent) {
 
         val line = StringUtil.offsetToLineNumber(event.child.containingFile.text, startOffset)
         if (!file.exists()) {
-            val highlighter = editor.markupModel.allHighlighters.firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == line }
-            highlighter?.dispose()
+            editor.markupModel.allHighlighters.firstOrNull {
+                StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == line
+            }?.dispose()
 
             return
         }
