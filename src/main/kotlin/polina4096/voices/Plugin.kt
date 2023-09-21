@@ -175,7 +175,7 @@ class MyProjectManagerListener : ProjectManagerListener {
                     override fun mouseClicked(event: EditorMouseEvent) {
                         if (event.area != EditorMouseEventArea.EDITING_AREA) return
                         val region = editor.foldingModel.allFoldRegions
-                            .first { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == event.logicalPosition.line } ?: return
+                            .firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == event.logicalPosition.line } ?: return
 
                         val mouseEvent = event.mouseEvent
                         val regionPos = editor.offsetToXY(region.startOffset)
