@@ -36,15 +36,15 @@ fun Project.error(string: String) {
         .notify(this)
 }
 
-fun makeVoiceFold(editor: Editor, highlighter: RangeHighlighter, makeVoiceFoldRegion: VoiceFoldRegionRenderer) {
-    editor.foldingModel.runBatchFoldingOperation {
+fun Editor.makeVoiceFold(highlighter: RangeHighlighter, makeVoiceFoldRegion: VoiceFoldRegionRenderer) {
+    this.foldingModel.runBatchFoldingOperation {
         val position = StringUtil.offsetToLineNumber(highlighter.document.text, highlighter.startOffset)
         val offset = highlighter.getUserData<Int>(Key("offset"))
-        editor.foldingModel.addCustomLinesFolding(position, position, makeVoiceFoldRegion.also { if (offset != null) it.offset = offset })
+        this.foldingModel.addCustomLinesFolding(position, position, makeVoiceFoldRegion.also { if (offset != null) it.offset = offset })
     }
 }
 
-fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegionRenderer?, editor: Editor) {
+fun Editor.makeVoiceComment(line: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegionRenderer?) {
     class VoiceGutterIconRenderer(val highlighter: RangeHighlighter) : GutterIconRenderer() {
         override fun getIcon(): Icon = AllIcons.Gutter.JavadocRead
         override fun hashCode(): Int = this.clickAction.hashCode()
@@ -55,17 +55,17 @@ fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegi
                 override fun actionPerformed(e: AnActionEvent) {
                     val render = voiceFoldRegionRenderer()
                     if (render != null) {
-                        makeVoiceFold(editor, highlighter, render)
+                        this@makeVoiceComment.makeVoiceFold(highlighter, render)
                     }
                 }
             }
         }
     }
 
-    val markupModel = editor.markupModel
+    val markupModel = this.markupModel
     val highlighter =
-        markupModel.allHighlighters.firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == position } ?:
-        markupModel.addLineHighlighter(TextAttributesKey.createTextAttributesKey("voice_message"), position, HighlighterLayer.FIRST)
+        markupModel.allHighlighters.firstOrNull { StringUtil.offsetToLineNumber(this.document.text, it.startOffset) == line } ?:
+        markupModel.addLineHighlighter(TextAttributesKey.createTextAttributesKey("voice_message"), line, HighlighterLayer.FIRST)
 
     highlighter.gutterIconRenderer = VoiceGutterIconRenderer(highlighter)
 }
@@ -94,7 +94,7 @@ fun processPsiEvent(event: PsiTreeChangeEvent) {
             return
         }
 
-        makeVoiceComment(line, { VoiceFoldRegionRenderer(editor, file, startOffset) }, editor)
+        editor.makeVoiceComment(line) { VoiceFoldRegionRenderer(editor, file, startOffset) }
     }
 }
 
@@ -131,7 +131,18 @@ class MyProjectManagerListener : ProjectManagerListener {
 
         PsiManager.getInstance(project).addPsiTreeChangeListener(object : PsiTreeChangeListener {
             override fun beforeChildAddition(event: PsiTreeChangeEvent) { }
-            override fun beforeChildRemoval(event: PsiTreeChangeEvent) { }
+            override fun beforeChildRemoval(event: PsiTreeChangeEvent) {
+                if (event.child is PsiComment) {
+                    val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+
+                    val startOffset = event.child.startOffset
+                    val line = StringUtil.offsetToLineNumber(event.child.containingFile.text, startOffset)
+                    val highlighter = editor.markupModel.allHighlighters
+                        .firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == line }
+
+                    highlighter?.dispose()
+                }
+            }
             override fun beforeChildReplacement(event: PsiTreeChangeEvent) { }
             override fun beforeChildMovement(event: PsiTreeChangeEvent) { }
             override fun beforeChildrenChange(event: PsiTreeChangeEvent) { }
