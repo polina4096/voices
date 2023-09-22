@@ -19,13 +19,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.project.stateStore
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiTreeChangeEvent
 import com.intellij.psi.PsiTreeChangeListener
 import com.intellij.refactoring.suggested.startOffset
-import java.io.File
 import javax.swing.Icon
 import kotlin.math.roundToInt
 
@@ -70,34 +68,6 @@ fun Editor.makeVoiceComment(line: Int, voiceFoldRegionRenderer: () -> VoiceFoldR
     highlighter.gutterIconRenderer = VoiceGutterIconRenderer(highlighter)
 }
 
-fun processPsiEvent(event: PsiTreeChangeEvent) {
-    if (event.child is PsiComment) {
-        val project = event.child.project
-        val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
-        val index = event.child.text.indexOf("voice:")
-        if (index == -1) return
-
-        val audioPath = event.child.text
-            .substring(index + "voice:".length)
-            .takeWhile { c -> c != '\n' }
-
-        val absolutePath = project.stateStore.projectBasePath.resolve(audioPath)
-        val file = File(absolutePath.toUri())
-        val startOffset = event.child.startOffset
-
-        val line = StringUtil.offsetToLineNumber(event.child.containingFile.text, startOffset)
-        if (!file.exists()) {
-            val highlighter = editor.markupModel.allHighlighters
-                .firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == line }
-
-            highlighter?.dispose()
-            return
-        }
-
-        editor.makeVoiceComment(line) { VoiceFoldRegionRenderer(editor, file, startOffset) }
-    }
-}
-
 class MyProjectManagerListener : ProjectManagerListener {
     override fun projectOpened(project: Project) {
         EditorFactory.getInstance().addEditorFactoryListener(object : EditorFactoryListener {
@@ -130,7 +100,6 @@ class MyProjectManagerListener : ProjectManagerListener {
         }, project)
 
         PsiManager.getInstance(project).addPsiTreeChangeListener(object : PsiTreeChangeListener {
-            override fun beforeChildAddition(event: PsiTreeChangeEvent) { }
             override fun beforeChildRemoval(event: PsiTreeChangeEvent) {
                 if (event.child is PsiComment) {
                     val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
@@ -143,16 +112,18 @@ class MyProjectManagerListener : ProjectManagerListener {
                     highlighter?.dispose()
                 }
             }
+
+            override fun beforeChildAddition(event: PsiTreeChangeEvent) { }
             override fun beforeChildReplacement(event: PsiTreeChangeEvent) { }
             override fun beforeChildMovement(event: PsiTreeChangeEvent) { }
             override fun beforeChildrenChange(event: PsiTreeChangeEvent) { }
             override fun beforePropertyChange(event: PsiTreeChangeEvent) { }
             override fun childRemoved(event: PsiTreeChangeEvent) { }
-            override fun childAdded(event: PsiTreeChangeEvent) { processPsiEvent(event) }
-            override fun childReplaced(event: PsiTreeChangeEvent) { processPsiEvent(event) }
-            override fun childrenChanged(event: PsiTreeChangeEvent) { processPsiEvent(event) }
-            override fun childMoved(event: PsiTreeChangeEvent) { processPsiEvent(event) }
-            override fun propertyChanged(event: PsiTreeChangeEvent) { processPsiEvent(event) }
+            override fun childAdded(event: PsiTreeChangeEvent) { }
+            override fun childReplaced(event: PsiTreeChangeEvent) { }
+            override fun childrenChanged(event: PsiTreeChangeEvent) { }
+            override fun childMoved(event: PsiTreeChangeEvent) { }
+            override fun propertyChanged(event: PsiTreeChangeEvent) { }
 
         }, project)
     }
