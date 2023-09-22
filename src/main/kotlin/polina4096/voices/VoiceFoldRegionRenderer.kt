@@ -1,4 +1,4 @@
-package polina4096.intelligentvoices
+package polina4096.voices
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.UISettings

@@ -1,4 +1,4 @@
-package polina4096.intelligentvoices
+package polina4096.voices
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.UISettings
@@ -31,7 +31,7 @@ import kotlin.math.roundToInt
 
 fun Project.error(string: String) {
     NotificationGroupManager.getInstance()
-        .getNotificationGroup("Intelligent Voices")
+        .getNotificationGroup("Voices")
         .createNotification(string, NotificationType.ERROR)
         .notify(this)
 }

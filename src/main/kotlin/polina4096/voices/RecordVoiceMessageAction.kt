@@ -1,12 +1,15 @@
-package polina4096.intelligentvoices
+package polina4096.voices
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.project.stateStore
@@ -19,6 +22,18 @@ import javax.swing.*
 import kotlin.concurrent.thread
 
 class RecordVoiceMessageAction : AnAction() {
+    override fun update(e: AnActionEvent) {
+        val project: Project? = e.project
+        val editor: Editor? = e.getData(CommonDataKeys.EDITOR)
+
+        var menuAllowed = false
+        if (editor != null && project != null) {
+            menuAllowed = editor.caretModel.allCarets.isNotEmpty()
+        }
+
+        e.presentation.isEnabled = menuAllowed
+    }
+
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun actionPerformed(e: AnActionEvent) = object : DialogWrapper(e.project!!) {

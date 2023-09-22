@@ -1,20 +1,21 @@
 <idea-plugin>
-    <id>polina4096.intelligentvoices</id>
+    <id>polina4096.voices</id>
     <name>Intelligent Voices</name>
     <vendor email="polina4096@yandex.ru" url="https://t.me/polina4096">Полина</vendor>
     <description><![CDATA[Adds support for voice messages to IntelliJ-based IDEs]]></description>
     <depends>com.intellij.modules.platform</depends>
     <extensions defaultExtensionNs="com.intellij">
-        <notificationGroup id="Intelligent Voices"
-                           displayType="BALLOON" />
+        <notificationGroup id="Voices" displayType="BALLOON" />
     </extensions>
     <applicationListeners>
-        <listener class="polina4096.intelligentvoices.MyProjectManagerListener"
+        <listener class="polina4096.voices.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
     <actions>
-        <action id="polina4096.intelligentvoices.RecordVoiceMessageAction" class="polina4096.intelligentvoices.RecordVoiceMessageAction"
-                text="Record Voice Message" description="Record a voice message and put in into a comment">
+        <action id="polina4096.voices.RecordVoiceMessageAction"
+                class="polina4096.voices.RecordVoiceMessageAction"
+                text="Record Voice Message"
+                description="Record a voice message and put in into a comment">
             <add-to-group group-id="EditMenu" anchor="last"/>
         </action>
     </actions>
