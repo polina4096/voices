@@ -44,7 +44,7 @@ fun makeVoiceFold(editor: Editor, highlighter: RangeHighlighter, makeVoiceFoldRe
     }
 }
 
-fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegionRenderer, editor: Editor) {
+fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegionRenderer?, editor: Editor) {
     class VoiceGutterIconRenderer(val highlighter: RangeHighlighter) : GutterIconRenderer() {
         override fun getIcon(): Icon = AllIcons.Gutter.JavadocRead
         override fun hashCode(): Int = this.clickAction.hashCode()
@@ -53,7 +53,10 @@ fun makeVoiceComment(position: Int, voiceFoldRegionRenderer: () -> VoiceFoldRegi
         override fun getClickAction(): AnAction {
             return object : AnAction() {
                 override fun actionPerformed(e: AnActionEvent) {
-                    makeVoiceFold(editor, highlighter, voiceFoldRegionRenderer())
+                    val render = voiceFoldRegionRenderer()
+                    if (render != null) {
+                        makeVoiceFold(editor, highlighter, render)
+                    }
                 }
             }
         }
@@ -84,9 +87,10 @@ fun processPsiEvent(event: PsiTreeChangeEvent) {
 
         val line = StringUtil.offsetToLineNumber(event.child.containingFile.text, startOffset)
         if (!file.exists()) {
-            val highlighter = editor.markupModel.allHighlighters.firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == line }
-            highlighter?.dispose()
+            val highlighter = editor.markupModel.allHighlighters
+                .firstOrNull { StringUtil.offsetToLineNumber(editor.document.text, it.startOffset) == line }
 
+            highlighter?.dispose()
             return
         }
 
