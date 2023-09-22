@@ -4,7 +4,6 @@
     <vendor email="polina4096@yandex.ru" url="https://t.me/polina4096">Полина</vendor>
     <description><![CDATA[Adds support for voice messages to IntelliJ-based IDEs]]></description>
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.java</depends>
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="Voices" displayType="BALLOON" />
         <highlightVisitor implementation="polina4096.voices.VoiceMessageHighlightVisitor"/>
