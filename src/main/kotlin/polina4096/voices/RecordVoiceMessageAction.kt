@@ -73,7 +73,9 @@ class RecordVoiceMessageAction : AnAction() {
                 val highlighter = editor.markupModel.addLineHighlighter(key, line, HighlighterLayer.FIRST)
 
                 val render = VoiceFoldRegionRenderer(editor, dest, startOffset)
-                makeVoiceFold(editor, highlighter, render)
+                if (render != null) {
+                    makeVoiceFold(editor, highlighter, render)
+                }
             }
 
             close(OK_EXIT_CODE)

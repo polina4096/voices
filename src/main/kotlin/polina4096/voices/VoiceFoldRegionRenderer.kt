@@ -55,7 +55,7 @@ class VoiceFoldRegionRenderer (
     private var time = 0.0F
 
     companion object {
-        operator fun invoke(editor: Editor, file: File, startOffset: Int): VoiceFoldRegionRenderer {
+        operator fun invoke(editor: Editor, file: File, startOffset: Int): VoiceFoldRegionRenderer? {
             // load audio
             val stream = AudioSystem.getAudioInputStream(file)
 
@@ -92,6 +92,10 @@ class VoiceFoldRegionRenderer (
                 .chunked(sampleChunkLength)
                 .map { it.fold(0.0) { acc, e -> acc + abs(e) } }
                 .map { it / sampleChunkLength }
+
+            if (chunks.all { it == 0.0 }) {
+                return null
+            }
 
             // normalize and scale
             val normal = chunks.maxOf { it }
