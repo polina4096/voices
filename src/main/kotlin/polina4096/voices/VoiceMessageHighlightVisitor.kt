@@ -14,7 +14,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.refactoring.suggested.startOffset
 import java.io.File
 
-
 class VoiceMessageHighlightVisitor : HighlightVisitor {
     override fun suitableForFile(file: PsiFile): Boolean = true
 
@@ -65,7 +64,5 @@ class VoiceMessageHighlightVisitor : HighlightVisitor {
         return true
     }
 
-    override fun clone(): HighlightVisitor {
-        TODO("Not yet implemented")
-    }
+    override fun clone(): HighlightVisitor = VoiceMessageHighlightVisitor()
 }
