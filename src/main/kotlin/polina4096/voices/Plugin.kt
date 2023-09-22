@@ -23,6 +23,7 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiTreeChangeEvent
 import com.intellij.psi.PsiTreeChangeListener
+import com.intellij.refactoring.suggested.range
 import com.intellij.refactoring.suggested.startOffset
 import javax.swing.Icon
 import kotlin.math.roundToInt
@@ -37,8 +38,7 @@ fun Project.error(string: String) {
 fun Editor.makeVoiceFold(highlighter: RangeHighlighter, makeVoiceFoldRegion: VoiceFoldRegionRenderer) {
     this.foldingModel.runBatchFoldingOperation {
         val position = StringUtil.offsetToLineNumber(highlighter.document.text, highlighter.startOffset)
-        val offset = highlighter.getUserData<Int>(Key("offset"))
-        this.foldingModel.addCustomLinesFolding(position, position, makeVoiceFoldRegion.also { if (offset != null) it.offset = offset })
+        this.foldingModel.addCustomLinesFolding(position, position, makeVoiceFoldRegion)
     }
 }
 
@@ -51,8 +51,12 @@ fun Editor.makeVoiceComment(line: Int, voiceFoldRegionRenderer: () -> VoiceFoldR
         override fun getClickAction(): AnAction {
             return object : AnAction() {
                 override fun actionPerformed(e: AnActionEvent) {
+                    val startOffset = highlighter.range?.startOffset ?: return
+                    val indentation = this@makeVoiceComment.offsetToVisualPosition(startOffset).column
+
                     val render = voiceFoldRegionRenderer()
                     if (render != null) {
+                        render.offset = indentation
                         this@makeVoiceComment.makeVoiceFold(highlighter, render)
                     }
                 }
