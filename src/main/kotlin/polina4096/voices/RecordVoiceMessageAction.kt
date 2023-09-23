@@ -1,10 +1,13 @@
 package polina4096.voices
 
+import com.intellij.lang.Language
+import com.intellij.lang.LanguageCommenters
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.colors.TextAttributesKey
 import com.intellij.openapi.editor.markup.HighlighterLayer
@@ -13,6 +16,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.project.stateStore
+import com.intellij.psi.PsiDocumentManager
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionEvent
@@ -36,6 +40,13 @@ class RecordVoiceMessageAction : AnAction() {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
+    private fun getCommentPrefix(project: Project, document: Document): String {
+        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+        val language = LanguageCommenters.INSTANCE.forLanguage(psiFile?.language ?: Language.ANY)
+
+        return language.lineCommentPrefix?.trim() ?: "//"
+    }
+
     override fun actionPerformed(e: AnActionEvent) = object : DialogWrapper(e.project!!) {
         val basePath = e.project!!.stateStore.projectBasePath
         val tempPath = basePath.resolve(".idea/recording.wav")
@@ -54,21 +65,25 @@ class RecordVoiceMessageAction : AnAction() {
         }
 
         override fun doOKAction() {
+            val project = e.project!!
+
             val name = java.time.Instant.now().toEpochMilli()
             val path = ".idea/${name}.wav"
             val dest = File(basePath.resolve(path).toUri())
             if (!File(tempPath.toUri()).renameTo(dest)) {
-                e.project!!.error("Failed to record voice message!")
+                project.error("Failed to record voice message!")
                 return
             }
 
-            val editor = FileEditorManager.getInstance(e.project!!).selectedTextEditor ?: run { close(OK_EXIT_CODE); return }
+            val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: run { close(OK_EXIT_CODE); return }
 
             val startOffset = editor.caretModel.offset
             val line = StringUtil.offsetToLineNumber(editor.document.text, startOffset)
 
             WriteCommandAction.runWriteCommandAction(e.project!!) {
-                editor.document.insertString(startOffset, "// voice:${path}")
+                val prefix = getCommentPrefix(project, editor.document)
+                editor.document.insertString(startOffset, "$prefix voice:${path}")
+
                 val key = TextAttributesKey.createTextAttributesKey("voice_message")
                 val highlighter = editor.markupModel.addLineHighlighter(key, line, HighlighterLayer.FIRST)
 
@@ -95,8 +110,7 @@ class RecordVoiceMessageAction : AnAction() {
         override fun createLeftSideActions(): Array<Action> {
             return arrayOf(
                 object : AbstractAction("Start recording") {
-                    override fun isEnabled(): Boolean
-                        = AudioSystem.isLineSupported(microphone.lineInfo)
+                    override fun isEnabled(): Boolean = AudioSystem.isLineSupported(microphone.lineInfo)
 
                     override fun actionPerformed(e: ActionEvent?) {
                         if (!isRecording) {
