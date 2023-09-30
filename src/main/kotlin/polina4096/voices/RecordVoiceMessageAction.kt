@@ -1,5 +1,6 @@
 package polina4096.voices
 
+import com.intellij.lang.Commenter
 import com.intellij.lang.Language
 import com.intellij.lang.LanguageCommenters
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -42,9 +43,9 @@ class RecordVoiceMessageAction : AnAction() {
 
     private fun getCommentPrefix(project: Project, document: Document): String {
         val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
-        val language = LanguageCommenters.INSTANCE.forLanguage(psiFile?.language ?: Language.ANY)
+        val language: Commenter? = LanguageCommenters.INSTANCE.forLanguage(psiFile?.language ?: Language.ANY)
 
-        return language.lineCommentPrefix?.trim() ?: "//"
+        return language?.lineCommentPrefix?.trim() ?: "//"
     }
 
     override fun actionPerformed(e: AnActionEvent) = object : DialogWrapper(e.project!!) {
