@@ -27,6 +27,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: my-artifact
+          name: "${{ github.event.repository.name }}-${{ github.sha }}"
           path: |
             ~/new/artifact/
