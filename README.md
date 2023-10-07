@@ -1,4 +1,4 @@
-# Voices [![GitHub](https://img.shields.io/github/license/polina4096/voices)](https://github.com/polina4096/voices/blob/mistress/LICENSE)
+# Voices [![GitHub](https://img.shields.io/github/license/polina4096/voices)](https://github.com/polina4096/voices/blob/mistress/LICENSE) [![Build](https://github.com/polina4096/voices/actions/workflows/ci.yaml/badge.svg)](https://github.com/polina4096/voices/actions/workflows/ci.yaml)
 
 Record and listen to voice messages in your favorite IDE by JetBrains: https://plugins.jetbrains.com/plugin/22766-voices
 
