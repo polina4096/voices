@@ -1,0 +1,14 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'mistress'
+    tags:
+      - '*'
+    paths-ignore:
+      - '*.md'
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
